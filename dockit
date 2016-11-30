@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+
+# Build or run docker images according to the convention that
+# the name of the current working directory should be used for
+# the name of the image, and the current working directory
+# should contain a Dockerfile to use for building the image.
+# When running the image, the common '-i' and '-t' args are
+# supplied automatically.
+
+set -eu
+
+RUNDIR="$(pwd)"
+IMAGE="${RUNDIR##*/}"
+
+usagebrief() {
+    echo "Usage: dockit build [BUILDOPT...]"
+    echo "       dockit run [RUNOPT...] [--] [COMMAND] [ARG...]"
+    echo
+}
+
+usagelong() {
+    usagebrief
+    echo
+    echo "  BUILDOPT: options to pass through to 'docker build' before"
+    echo "      '-t IMAGENAME'."
+    echo
+    echo "  RUNOPT: docker opts like '--rm' that will be passed to docker"
+    echo "      before the image name that is automatically supplied to"
+    echo "      'docker run'."
+    echo
+    echo "  --: separates the docker options such as '--rm' that are passed"
+    echo "      to docker before the automatically supplied image name from"
+    echo "      any COMMAND and ARGS that will be passed to 'docker run' after"
+    echo "      the image name."
+    echo
+    echo "  COMMAND: command passed to 'docker run' after the automatically"
+    echo "      supplied image name."
+    echo
+}
+
+usageexamples() {
+    echo "Examples:"
+    echo
+    echo "dockit build"
+    echo "    Builds image using Dockerfile in current dir. The image name"
+    echo "    will be the name of the current working directory, so it's "
+    echo "    useful to store the directories for these throway images in a"
+    echo "    common parent directory so that the uniqueness of the name is"
+    echo "    assured."
+    echo ""
+    echo "dockit run"
+    echo "    Runs 'docker run -it IMAGE', where IMAGE would be the name of"
+    echo "    the current working directory."
+    echo
+    echo "dockit run --rm"
+    echo "    Runs 'docker run -it --rm IMAGE', where IMAGE would be the name"
+    echo "    of the current working directory."
+    echo
+    echo "dockit run -- echo hello world"
+    echo "    Runs 'docker run -it IMAGE echo hello world', where IMAGE"
+    echo "    would be the name of the current working directory."
+    echo ""
+    echo "dockit run --rm --entrypoint /bin/sh -- echo hello world"
+    echo "    Runs 'docker run -it --rm --entrypoint /bin/sh IMAGE echo hello world,"
+    echo "    where IMAGE would be the name of the current working directory."
+}
+
+build() {
+    exec docker build -t "${IMAGE}" "$@" "${RUNDIR}"
+}
+
+run() {
+    local pre_args=()
+    local post_args=()
+    local pre_complete="0"
+
+    local runargs=("$@")
+
+    local arg=""
+    while [[ "${#runargs[@]}" -gt 0 ]]; do
+        arg="${runargs[0]}"
+        case "${arg}" in
+            '--')
+                pre_complete="1"
+                ;;
+            *)
+                if [[ "${pre_complete}" = "0" ]]; then
+                    pre_args+=("${arg}");
+                else
+                    post_args+=("${arg}");
+                fi
+                ;;
+        esac
+        runargs=("${runargs[@]:1}")
+    done
+    local -a args
+    [[ "${#pre_args[@]}" -gt "0" ]] && args+=(${pre_args[@]})
+    args+=("${IMAGE}")
+    [[ "${#post_args[@]}" -gt "0" ]] && args+=(${post_args[@]})
+    exec docker run -it "${args[@]}"
+}
+
+
+CMD="${1:-}"
+case "${CMD}" in
+    -h|--help)
+        usagelong
+        echo
+        echo
+        usageexamples
+        exit 0;;
+    build)
+        build "${@:2}";;
+    run)
+        run "${@:2}";;
+    *)
+        usagebrief
+        exit 0;;
+esac
