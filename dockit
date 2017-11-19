@@ -44,10 +44,10 @@ usageexamples() {
     echo "dockit build"
     echo "    Builds image using Dockerfile in current dir. The image name"
     echo "    will be the name of the current working directory, so it's "
-    echo "    useful to store the directories for these throway images in a"
+    echo "    useful to store the directories for these throwaway images in a"
     echo "    common parent directory so that the uniqueness of the name is"
     echo "    assured."
-    echo ""
+    echo
     echo "dockit run"
     echo "    Runs 'docker run -it IMAGE', where IMAGE would be the name of"
     echo "    the current working directory."
@@ -59,7 +59,7 @@ usageexamples() {
     echo "dockit run -- echo hello world"
     echo "    Runs 'docker run -it IMAGE echo hello world', where IMAGE"
     echo "    would be the name of the current working directory."
-    echo ""
+    echo
     echo "dockit run --rm --entrypoint /bin/sh -- echo hello world"
     echo "    Runs 'docker run -it --rm --entrypoint /bin/sh IMAGE echo hello world,"
     echo "    where IMAGE would be the name of the current working directory."
