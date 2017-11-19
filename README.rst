@@ -71,7 +71,7 @@ command to ipython with the following Dockerfile:
 Running ``dockit run --rm`` then drops me into a throwaway ipython shell
 in the container that will be deleted when I exit ipython.
 
-.. caution::
+.. warning::
 
     If you use Docker to experiment with miscellaneous code or resources
     from untrusted parties, make sure you have Docker's userns-remap_ feature
