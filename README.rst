@@ -5,48 +5,76 @@ A Bash script for easy building and running of Docker images
 using the Dockerfile in the current woring directory for building
 and the name of the current working directory as the image name.
 
-The idea is that if you have a directory like ``$HOME/dockertmp`` that
-contains directories for different experimental images, each of which
-contains a Dockerfile, using the name of the directory containing
-the Dockerfile as the name of the image when building and running,
-and always supplying the common '-it' args when running,
-is convenient.
+Suppose you have following directory structure (`$DOCKIT` below refers to
+the `dockit` directory shown here):
 
-Example:
+.. code-block::
 
-.. code-block:: shell-session
+  dockit
+  |── python363
+  │   └── Dockerfile
+  └── node891
+      └── Dockerfile
 
-    $ mkdir -p $HOME/dockertmp
-    $ cd $HOME/dockertmp
-    $ mkdir python352
-    $ cd python352
-    $ cat <<EOF > Dockerfile
-    FROM python:3.5.2-alpine
-    EOF
-    $ dockit build
-    Sending build context to Docker daemon 2.048 kB
-    Step 1 : FROM python:3.5.2-alpine
-     ---> 9a646c8ffe06
-    Successfully built 9a646c8ffe06
-    $ dockit run --rm
-    Python 3.5.2 (default, Jul  8 2016, 19:25:07)
-    [GCC 5.3.0] on linux
-    Type "help", "copyright", "credits" or "license" for more information.
-    >>> print("Hello, world")
-    Hello, world
-    >>>
-    $ cd ..
-    $ mkdir node69
-    $ cd node69
-    $ cat <<EOF > Dockerfile
-    FROM node:6.9-alpine
-    EOF
-    $ dockit build
-    Sending build context to Docker daemon 2.048 kB
-    Step 1 : FROM node:6.9-alpine
-     ---> 4c013cd428c0
-    Successfully built 4c013cd428c0
-    $ dockit run --rm
-    > console.log("Hello, world")
-    Hello, world
-    $
+The python363/Dockerfile contains:
+
+.. code-block:: Dockerfile
+
+    FROM python:3.6.3-alpine
+
+The node891/Dockerfile contains:
+
+.. code-block:: Dockerfile
+
+    FROM node:8.9.1-alpine
+
+
+Then you can build or update a Docker image for each of those by running:
+
+.. code-block:: shell
+
+    cd $DOCKIT/python363
+    dockit build
+
+.. code-block:: shell
+
+    cd $DOCKIT/node891
+    dockit build
+
+The image names will be `python363` and `node891`, respectively.
+
+Once the images have been built, you can run them like so:
+
+.. code-block:: shell
+
+    cd $DOCKIT/python363
+    dockit run
+
+Add ``--rm`` if you want to remove the container upon exit.
+
+You can of course install extra utilities into the images, give
+them a default command, and otherwise configure the image using
+the Dockerfile. For example, my `python363` image installs
+the latest versions of pip and ipython, and sets the default
+command to ipython with the following Dockerfile:
+
+.. code-block:: Dockerfile
+
+    FROM python:3.6.3-alpine
+
+    CMD ipython
+
+    RUN pip install -U pip
+    RUN pip install ipython
+
+
+Running ``dockit run --rm`` then drops me into a throwaway ipython shell
+in the container that will be deleted when I exit ipython.
+
+.. caution::
+
+    If you use Docker to experiment with miscellaneous code or resources
+    from untrusted parties, make sure you have Docker's userns-remap_ feature
+    configured or run the container as a non-root user (e.g., --user nobody).
+
+.. _userns-remap: https://docs.docker.com/engine/security/userns-remap/
